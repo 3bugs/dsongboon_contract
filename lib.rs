@@ -8,15 +8,17 @@ use ink_lang as ink;
 #[ink::contract]
 mod dsongboon_contract {
     use scale::{Encode, Decode};
-    use scale_info::TypeInfo;
     use ink_storage::collections::HashMap;
     use ink_prelude::string::String;
     use ink_storage::traits::{
         SpreadLayout,
         PackedLayout,
     };
+    use ink_prelude::vec::Vec;
 
-    #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout, TypeInfo)]
+    // https://github.com/paritytech/cargo-contract/issues/158
+    #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub struct Songboon {
         // Songboon ID
         pub id: u32,
@@ -34,7 +36,8 @@ mod dsongboon_contract {
         pub certificate_file_hash: String,
     }
 
-    #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout, TypeInfo)]
+    #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub struct Tumboon {
         // Tumboon ID
         pub id: u32,
