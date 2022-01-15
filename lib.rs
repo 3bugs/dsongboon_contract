@@ -31,9 +31,11 @@ mod dsongboon_contract {
         pub request_date: String,
         pub end_date: String,
         pub category: String,
-        // keep files on file system, only store their hashes on chain
+        // keep files on file system, only store their hashes & file names on chain
         pub request_document_file_hash: String,
+        pub request_document_file_name: String,
         pub certificate_file_hash: String,
+        pub certificate_file_name: String,
     }
 
     #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout)]
@@ -48,6 +50,7 @@ mod dsongboon_contract {
         pub donate_amount: u32,
         pub donate_date: String,
         pub slip_file_hash: String,
+        pub slip_file_name: String,
     }
 
     #[ink(storage)]
@@ -205,6 +208,8 @@ mod dsongboon_contract {
                 category: "children".to_string(),
                 request_document_file_hash: "e0d123e5f316bef78bfdf5a008837577".to_string(),
                 certificate_file_hash: "35d91262b3c3ec8841b54169588c97f7".to_string(),
+                request_document_file_name: "e0d123e5f316bef78bfdf5a008837577.pdf".to_string(),
+                certificate_file_name: "35d91262b3c3ec8841b54169588c97f7.pdf".to_string(),
             });
             assert_eq!(contract.get_songboon_list().len(), 1);
         }
@@ -222,6 +227,7 @@ mod dsongboon_contract {
                 donate_amount: 500,
                 donate_date: "2020-01-14 16:30:00".to_string(),
                 slip_file_hash: "2d86c4246f3c0eb516628bf324d6b9a3".to_string(),
+                slip_file_name: "2d86c4246f3c0eb516628bf324d6b9a3.jpg".to_string(),
             });
             assert_eq!(contract.get_tumboon_list().len(), 1);
             assert_eq!(contract.get_tumboon_list_by_songboon_id(1).len(), 1);
@@ -234,6 +240,7 @@ mod dsongboon_contract {
                 donate_amount: 999,
                 donate_date: "2020-01-14 19:45:00".to_string(),
                 slip_file_hash: "66bd00e43ff8b932c14140472c4b8cc6".to_string(),
+                slip_file_name: "66bd00e43ff8b932c14140472c4b8cc6.jpg".to_string(),
             });
             assert_eq!(contract.get_tumboon_list().len(), 2);
             assert_eq!(contract.get_tumboon_list_by_songboon_id(1).len(), 2);
@@ -246,6 +253,7 @@ mod dsongboon_contract {
                 donate_amount: 555,
                 donate_date: "2020-01-15 06:00:00".to_string(),
                 slip_file_hash: "14140472c4b8cc666bd00e43ff8b932c".to_string(),
+                slip_file_name: "14140472c4b8cc666bd00e43ff8b932c.jpg".to_string(),
             });
             assert_eq!(contract.get_tumboon_list().len(), 3);
             assert_eq!(contract.get_tumboon_list_by_songboon_id(1).len(), 2);
