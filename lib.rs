@@ -8,7 +8,8 @@ use ink_lang as ink;
 #[ink::contract]
 mod dsongboon {
   use scale::{Encode, Decode};
-  use ink_storage::collections::Vec;
+  //use ink_storage::collections::Vec;
+  use ink_prelude::vec::Vec;
   use ink_prelude::string::String;
   use ink_storage::traits::{
     SpreadLayout,
@@ -93,6 +94,7 @@ mod dsongboon {
   pub struct Dsongboon {
     songboon_list: Vec<Songboon>,
     tumboon_list: Vec<Tumboon>,
+    vec: Vec<u32>,
   }
 
   impl Dsongboon {
@@ -109,12 +111,34 @@ mod dsongboon {
       Self {
         songboon_list: Vec::new(),
         tumboon_list: Vec::new(),
+        vec: Vec::new(),
       }
     }
 
     #[ink(message)]
     pub fn add_songboon(&mut self, songboon: Songboon) {
       self.songboon_list.push(songboon);
+      self.vec.push(1);
+    }
+
+    #[ink(message)]
+    pub fn add_vec(&mut self, value: u32) {
+      self.vec.push(value);
+    }
+
+    #[ink(message)]
+    pub fn get_vec(&self, index: u32) -> u32 {
+      self.vec[index as usize]
+    }
+
+    #[ink(message)]
+    pub fn vec_len(&self) -> u32 {
+      self.vec.len() as u32
+    }
+
+    #[ink(message)]
+    pub fn get_vec_list(&self) -> Vec<u32> {
+      self.vec.clone()
     }
 
     //https://stackoverflow.com/questions/44662312/how-to-filter-a-vector-of-custom-structs-in-rust
@@ -172,14 +196,19 @@ mod dsongboon {
     }
 
     // ดึงซองทั้งหมด
-    /*#[ink(message)]
+    #[ink(message)]
     pub fn get_songboon_list(&self) -> Vec<Songboon> {
       self.songboon_list.clone()
-    }*/
+    }
 
     #[ink(message)]
     pub fn get_songboon(&self, id: u32) -> Option<Songboon> {
-      self.songboon_list.get(id).cloned()
+      self.songboon_list.get(id as usize).cloned()
+    }
+
+    #[ink(message)]
+    pub fn get_songboon_by_id(&self, id: u32) -> Option<Songboon> {
+      self.songboon_list.iter().find(|songboon| songboon.id == id).cloned()
     }
 
     #[ink(message)]
@@ -194,17 +223,22 @@ mod dsongboon {
     }
 
     // ดึงการบริจาคทั้งหมด
-    /*#[ink(message)]
+    #[ink(message)]
     pub fn get_tumboon_list(&self) -> Vec<Tumboon> {
       self.tumboon_list.clone()
-    }*/
+    }
 
     #[ink(message)]
     pub fn get_tumboon(&self, id: u32) -> Option<Tumboon> {
-      self.tumboon_list.get(id).cloned()
+      self.tumboon_list.get(id as usize).cloned()
     }
 
-    /*#[ink(message)]
+    #[ink(message)]
+    pub fn get_tumboon_by_id(&self, id: u32) -> Option<Tumboon> {
+      self.tumboon_list.iter().find(|tumboon| tumboon.id == id).cloned()
+    }
+
+    #[ink(message)]
     pub fn get_tumboon_list_by_songboon_id(&self, songboon_id: u32) -> Vec<Tumboon> {
       let mut tumboon_list = Vec::new();
       for tumboon in &self.tumboon_list {
@@ -213,7 +247,7 @@ mod dsongboon {
         }
       }
       tumboon_list
-    }*/
+    }
 
     #[ink(message)]
     pub fn tumboon_list_count(&self) -> u32 {
