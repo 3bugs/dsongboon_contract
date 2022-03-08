@@ -115,7 +115,10 @@ mod dsongboon {
 
     #[ink(message)]
     pub fn add_songboon(&mut self, songboon: Songboon) {
-      self.songboon_list.push(songboon);
+      let found = self.songboon_list.iter().find(|sb| songboon.id == sb.id);
+      if found.is_none() {
+        self.songboon_list.push(songboon);
+      }
     }
 
     //https://stackoverflow.com/questions/44662312/how-to-filter-a-vector-of-custom-structs-in-rust
@@ -207,7 +210,10 @@ mod dsongboon {
     // เพิ่มการบริจาค
     #[ink(message)]
     pub fn add_tumboon(&mut self, tumboon: Tumboon) {
-      self.tumboon_list.push(tumboon);
+      let found = self.tumboon_list.iter().find(|tb| tumboon.id == tb.id);
+      if found.is_none() {
+        self.tumboon_list.push(tumboon);
+      }
     }
 
     // ดึงการบริจาคทั้งหมด
@@ -356,22 +362,45 @@ mod dsongboon {
           None,
         ],
       });
-      /*contract.add_songboon(
-        2,
-        "สมศรี แองเจิ้ลไทม์".to_string(),
-        "มูลนิธิพระมหาไถ่".to_string(),
-        "1234567890".to_string(),
-        "สมศรี แองเจิ้ลไทม์".to_string(),
-        "ธนาคารกสิกรไทย".to_string(),
-        20000,
-        "2020-01-14 13:00:00".to_string(),
-        "2020-02-28 23:59:59".to_string(),
-        "children".to_string(),
-        "e0d123e5f316bef78bfdf5a008837577".to_string(),
-        "e0d123e5f316bef78bfdf5a008837577.pdf".to_string(),
-        "35d91262b3c3ec8841b54169588c97f7".to_string(),
-        "35d91262b3c3ec8841b54169588c97f7.pdf".to_string(),
-      );*/
+      assert_eq!(contract.songboon_list_count(), 2);
+
+      contract.add_songboon(Songboon {
+        id: 2,
+        donate_req_number: "abc-123".to_string(),
+        donate_req_topic: "ขอทุนการศึกษา".to_string(),
+        donate_req_detail: "ขอทุนการศึกษา ขอทุนการศึกษา ขอทุนการศึกษา".to_string(),
+        donate_req_hashtag: Option::from("#ทุนการศึกษา".to_string()),
+        donate_req_by: 1,
+        donate_req_by_name: "สมศรี แองเจิ้ลไทม์".to_string(),
+        donate_req_by_id_card_number: "1234567890123".to_string(),
+        address: "11/13 ซ.งามวงศ์วาน 59 ลาดยาว".to_string(),
+        province: "กรุงเทพมหานคร".to_string(),
+        is_organization: true,
+        organization: Option::from(0),
+        organization_name: Option::from("มูลนิธิกระจกเงา".to_string()),
+        donate_category: "children".to_string(),
+        donate_req_date: "2020-01-14 13:00:00".to_string(),
+        donate_doc_expire_time: "2020-02-28 23:59:59".to_string(),
+        donate_doc_status: "OPE".to_string(),
+        total_req_amount: 10000,
+        account_bank: Option::from("ธนาคารกรุงเทพ".to_string()),
+        account_number: None,
+        account_name: "สมศรี แองเจิ้ลไทม์".to_string(),
+        account_promptpay_nid: None,
+        account_promptpay_phone: Option::from("0850581776".to_string()),
+        certificates: [
+          Some(Certificate {
+            certificate_position: "xxx".to_string(),
+            certificate_date: "xxx".to_string(),
+            file_url: "xxx".to_string(),
+            file_hash: "xxx".to_string(),
+            signature_url: "xxx".to_string(),
+            signature_hash: "xxx".to_string(),
+          }),
+          None,
+          None,
+        ],
+      });
       assert_eq!(contract.songboon_list_count(), 2);
     }
 
@@ -550,6 +579,34 @@ mod dsongboon {
       });
       assert_eq!(contract.tumboon_list_count(), 3);
       assert_eq!(contract.tumboon_list_count_by_songboon_id(1), 2);
+
+      contract.add_tumboon(Tumboon {
+        id: 1,
+        songboon_id: 1,
+        move_amount: 500,
+        move_date: "2020-01-14 19:45:00".to_string(),
+        donate_by: 1,
+        donate_by_name: "เจริญพร แองเจิ้ลไทม์".to_string(),
+        donate_by_info_display: 1,
+        slip_file_url: "xxx".to_string(),
+        slip_file_hash: "2d86c4246f3c0eb516628bf324d6b9a3".to_string(),
+        slip_pay_amount: 500,
+        slip_pay_ref: "1234567890".to_string(),
+        slip_pay_time: "2020-01-14 19:45:00".to_string(),
+        slip_pay_from_bank: "กสิกรไทย".to_string(),
+        slip_pay_from_account: "0123456789".to_string(),
+        slip_pay_from_name: "เจริญพร แองเจิ้ลไทม์".to_string(),
+        slip_pay_to_bank: Option::from("ไทยพาณิชย์".to_string()),
+        slip_pay_to_account: "9876543211".to_string(),
+        slip_pay_to_name: "สมบุญ แองเจิ้ลไทม์".to_string(),
+        total_req_amount_history_before: 10000,
+        total_receive_amount_history_before: 0,
+        total_remain_amount_history_before: 10000,
+        total_req_amount_history_after: 10000,
+        total_receive_amount_history_after: 500,
+        total_remain_amount_history_after: 9500,
+      });
+      assert_eq!(contract.tumboon_list_count(), 3);
     }
 
     /*#[ink::test]
