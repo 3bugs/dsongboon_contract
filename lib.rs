@@ -94,7 +94,6 @@ mod dsongboon {
   pub struct Dsongboon {
     songboon_list: Vec<Songboon>,
     tumboon_list: Vec<Tumboon>,
-    vec: Vec<u32>,
   }
 
   impl Dsongboon {
@@ -111,34 +110,12 @@ mod dsongboon {
       Self {
         songboon_list: Vec::new(),
         tumboon_list: Vec::new(),
-        vec: Vec::new(),
       }
     }
 
     #[ink(message)]
     pub fn add_songboon(&mut self, songboon: Songboon) {
       self.songboon_list.push(songboon);
-      self.vec.push(1);
-    }
-
-    #[ink(message)]
-    pub fn add_vec(&mut self, value: u32) {
-      self.vec.push(value);
-    }
-
-    #[ink(message)]
-    pub fn get_vec(&self, index: u32) -> u32 {
-      self.vec[index as usize]
-    }
-
-    #[ink(message)]
-    pub fn vec_len(&self) -> u32 {
-      self.vec.len() as u32
-    }
-
-    #[ink(message)]
-    pub fn get_vec_list(&self) -> Vec<u32> {
-      self.vec.clone()
     }
 
     //https://stackoverflow.com/questions/44662312/how-to-filter-a-vector-of-custom-structs-in-rust
@@ -209,6 +186,17 @@ mod dsongboon {
     #[ink(message)]
     pub fn get_songboon_by_id(&self, id: u32) -> Option<Songboon> {
       self.songboon_list.iter().find(|songboon| songboon.id == id).cloned()
+    }
+
+    #[ink(message)]
+    pub fn clear_songboon_list(&mut self) {
+      self.songboon_list.clear();
+      self.tumboon_list.clear();
+    }
+
+    #[ink(message)]
+    pub fn clear_tumboon_list_by_songboon_id(&mut self, songboon_id: u32) {
+      self.tumboon_list.retain(|tumboon| tumboon.songboon_id != songboon_id);
     }
 
     #[ink(message)]
