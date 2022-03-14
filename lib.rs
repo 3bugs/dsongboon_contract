@@ -11,6 +11,7 @@ mod dsongboon {
   //use ink_storage::collections::Vec;
   use ink_prelude::vec::Vec;
   use ink_prelude::string::String;
+  //use ink_storage::Mapping;
   use ink_storage::traits::{
     SpreadLayout,
     PackedLayout,
@@ -79,6 +80,13 @@ mod dsongboon {
 
   #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout)]
   #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+  pub struct TestStruct {
+    pub id: u32,
+    pub name: String,
+  }
+
+  #[derive(Debug, Clone, Encode, Decode, SpreadLayout, PackedLayout)]
+  #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
   pub struct Certificate {
     pub certificate_position: String,
     pub certificate_date: String,
@@ -94,24 +102,24 @@ mod dsongboon {
   pub struct Dsongboon {
     songboon_list: Vec<Songboon>,
     tumboon_list: Vec<Tumboon>,
+    //songboon_map: Mapping<u32, Songboon>,
   }
 
   impl Dsongboon {
-    /*#[ink(constructor)]
-    pub fn new(songboon_list: Vec<Songboon>, tumboon_list: Vec<Tumboon>) -> Self {
-      Self {
-        songboon_list,
-        tumboon_list,
-      }
-    }*/
-
     #[ink(constructor)]
     pub fn default() -> Self {
       Self {
         songboon_list: Vec::new(),
         tumboon_list: Vec::new(),
+        //songboon_map: Mapping::new(),
+        //songboon_map: Default::default(),
       }
     }
+
+    /*#[ink(message)]
+    pub fn add_songboon_map(&mut self, id: u32, songboon: Songboon) {
+      self.songboon_map.insert(id, &songboon);
+    }*/
 
     #[ink(message)]
     pub fn add_songboon(&mut self, songboon: Songboon) {
@@ -274,12 +282,81 @@ mod dsongboon {
       assert_eq!(contract.tumboon_list_count(), 0);
     }
 
+    /*#[ink::test]
+    fn test_works() {
+      let mut contract = Dsongboon::default();
+      assert_eq!(contract.test_list_count(), 0);
+
+      let mut i = 1;
+      let count = 10000;
+      while i < count {
+        contract.add_test(TestStruct {
+          id: i,
+          name: format!("Test {}", i),
+        });
+        i += 1;
+      }
+      assert_eq!(contract.test_list_count(), count - 1);
+    }*/
+
     #[ink::test]
     fn songboon_works() {
       let mut contract = Dsongboon::default();
       assert_eq!(contract.songboon_list_count(), 0);
 
-      contract.add_songboon(Songboon {
+      let mut i = 1;
+      let count = 10000;
+      while i < count {
+        let songboon = Songboon {
+          id: i,
+          donate_req_number: "abc-123".to_string(),
+          donate_req_topic: "ขอทุนการศึกษา".to_string(),
+          donate_req_detail: "ขอทุนการศึกษา ขอทุนการศึกษา ขอทุนการศึกษา".to_string(),
+          donate_req_hashtag: Option::from("#ทุนการศึกษา".to_string()),
+          donate_req_by: 1,
+          donate_req_by_name: "สมบุญ แองเจิ้ลไทม์".to_string(),
+          donate_req_by_id_card_number: "1234567890123".to_string(),
+          address: "11/13 ซ.งามวงศ์วาน 59 ลาดยาว".to_string(),
+          province: "กรุงเทพมหานคร".to_string(),
+          is_organization: false,
+          organization: Option::from(0),
+          organization_name: Option::from("มูลนิธิกระจกเงา".to_string()),
+          donate_category: "children".to_string(),
+          donate_req_date: "2020-01-14 13:00:00".to_string(),
+          donate_doc_expire_time: "2020-02-28 23:59:59".to_string(),
+          donate_doc_status: "OPE".to_string(),
+          total_req_amount: 10000,
+          account_bank: Option::from("ธนาคารกรุงเทพ".to_string()),
+          account_number: Option::from("1234567890".to_string()),
+          account_name: "สมบุญ แองเจิ้ลไทม์".to_string(),
+          account_promptpay_nid: None,
+          account_promptpay_phone: None,
+          certificates: [
+            Some(Certificate {
+              certificate_position: "aaa".to_string(),
+              certificate_date: "aaa".to_string(),
+              file_url: "aaa".to_string(),
+              file_hash: "aaa".to_string(),
+              signature_url: "aaa".to_string(),
+              signature_hash: "aaa".to_string(),
+            }),
+            Some(Certificate {
+              certificate_position: "bbb".to_string(),
+              certificate_date: "bbb".to_string(),
+              file_url: "bbb".to_string(),
+              file_hash: "bbb".to_string(),
+              signature_url: "bbb".to_string(),
+              signature_hash: "bbb".to_string(),
+            }),
+            None,
+          ],
+        };
+        contract.add_songboon(songboon);
+        i += 1;
+      }
+      assert_eq!(contract.songboon_list_count(), count - 1);
+
+      /*contract.add_songboon(Songboon {
         id: 1,
         donate_req_number: "abc-123".to_string(),
         donate_req_topic: "ขอทุนการศึกษา".to_string(),
@@ -401,7 +478,7 @@ mod dsongboon {
           None,
         ],
       });
-      assert_eq!(contract.songboon_list_count(), 2);
+      assert_eq!(contract.songboon_list_count(), 2);*/
     }
 
     #[ink::test]
