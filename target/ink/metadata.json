@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0xa9f899ae883028f0bbe5d295c3550d35725432135547b02e242c4a4fb53017e7",
+    "hash": "0x80fd0d5d2a9a4c03c9d038f12d11a9113cdb529c9a7c6d9517af13cf52e476c7",
     "language": "ink! 3.0.1",
     "compiler": "rustc 1.63.0-nightly"
   },
@@ -114,6 +114,53 @@
           "selector": "0x0f755a56"
         },
         {
+          "args": [],
+          "docs": [],
+          "label": "get_balance",
+          "mutates": false,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Balance"
+            ],
+            "type": 17
+          },
+          "selector": "0xea817e65"
+        },
+        {
+          "args": [
+            {
+              "label": "to",
+              "type": {
+                "displayName": [
+                  "AccountId"
+                ],
+                "type": 19
+              }
+            },
+            {
+              "label": "value",
+              "type": {
+                "displayName": [
+                  "Balance"
+                ],
+                "type": 17
+              }
+            }
+          ],
+          "docs": [],
+          "label": "topup",
+          "mutates": true,
+          "payable": false,
+          "returnType": {
+            "displayName": [
+              "Result"
+            ],
+            "type": 20
+          },
+          "selector": "0x8a704247"
+        },
+        {
           "args": [
             {
               "label": "to",
@@ -155,15 +202,6 @@
                   "Songboon"
                 ],
                 "type": 2
-              }
-            },
-            {
-              "label": "account",
-              "type": {
-                "displayName": [
-                  "AccountId"
-                ],
-                "type": 19
               }
             },
             {
@@ -324,15 +362,6 @@
                   "Tumboon"
                 ],
                 "type": 15
-              }
-            },
-            {
-              "label": "account",
-              "type": {
-                "displayName": [
-                  "AccountId"
-                ],
-                "type": 19
               }
             },
             {
@@ -1205,6 +1234,10 @@
               "variants": [
                 {
                   "index": 0,
+                  "name": "InsufficientAgtBalance"
+                },
+                {
+                  "index": 1,
                   "name": "InsufficientBalance"
                 }
               ]

@@ -109,6 +109,7 @@ mod dsongboon {
   #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
   #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
   pub enum Error {
+    InsufficientAgtBalance,
     InsufficientBalance,
   }
 
@@ -166,9 +167,33 @@ mod dsongboon {
       self.balances.get(owner).unwrap_or_default()
     }
 
+    // return balance for the caller account
+    #[ink(message)]
+    pub fn get_balance(&self) -> Balance {
+      let from = self.env().caller();
+      self.balance_of(from)
+    }
+
     #[inline]
     fn balance_of_impl(&self, owner: &AccountId) -> Balance {
       self.balances.get(owner).unwrap_or_default()
+    }
+
+    #[ink(message)]
+    pub fn topup(&mut self, to: AccountId, value: Balance) -> Result<()> {
+      if self.agt_balance < value {
+        return Err(Error::InsufficientAgtBalance);
+      }
+
+      self.agt_balance -= value;
+      let to_balance = self.balance_of(to);
+      self.balances.insert(to, &(to_balance + value));
+      self.env().emit_event(Transfer {
+        from: None,
+        to: Some(to),
+        value,
+      });
+      Ok(())
     }
 
     #[ink(message)]
@@ -207,7 +232,6 @@ mod dsongboon {
     pub fn add_songboon(
       &mut self,
       songboon: Songboon,
-      account: AccountId,
       fee: Balance,
     ) -> Result<()> {
       let from = self.env().caller();
@@ -313,7 +337,6 @@ mod dsongboon {
     pub fn add_tumboon(
       &mut self,
       tumboon: Tumboon,
-      account: AccountId,
       fee: Balance,
     ) -> Result<()> {
       let from = self.env().caller();
@@ -455,9 +478,24 @@ mod dsongboon {
     use ink_lang as ink;
 
     #[ink::test]
-    fn songboon_works() {
+    fn topup_works() {
       let mut contract = Dsongboon::default(100);
+      assert_eq!(contract.balance_of_agt(), 100);
+
+      assert_eq!(contract.balance_of(AccountId::from([0x0; 32])), 0);
+      assert_eq!(contract.topup(AccountId::from([0x0; 32]), 60), Ok(()));
+      assert_eq!(contract.balance_of(AccountId::from([0x0; 32])), 60);
+      assert_eq!(contract.balance_of_agt(), 40);
+      assert_eq!(contract.topup(AccountId::from([0x0; 32]), 60), Err(Error::InsufficientAgtBalance));
+    }
+
+    #[ink::test]
+    fn songboon_works() {
+      let mut contract = Dsongboon::default(1000);
       //assert_eq!(contract.get_songboon_count(), 0);
+
+      assert_eq!(contract.topup(AccountId::from([0x1; 32]), 500), Ok(()));
+
       let songboon = Songboon {
         id: 1,
         donate_req_number: "".to_string(),
@@ -496,14 +534,18 @@ mod dsongboon {
         ],
       };
 
+      let mut n = 0;
       for i in 1..=100 {
         let mut sb = songboon.clone();
         sb.id = i;
         sb.total_req_amount = i * 1000;
-        contract.add_songboon(sb, AccountId::from([0x0; 32]), 10);
+        assert_eq!(contract.add_songboon(sb, 1), Ok(()));
         assert_eq!(contract.songboon_count(), i);
         assert_eq!(contract.get_songboon(i).id, i);
+        n += 1;
       }
+      assert_eq!(contract.balance_of(AccountId::from([0x1; 32])), 500 - n);
+      assert_eq!(contract.add_songboon(songboon, 500 - n + 1), Err(Error::InsufficientBalance));
 
       let list = contract.get_songboon_list(10, 5);
       let sum = list.iter().fold(0, |total, sb| {
@@ -526,7 +568,10 @@ mod dsongboon {
     #[ink::test]
     fn add_certificate_works() {
       let mut contract = Dsongboon::default(100);
-      contract.add_songboon(Songboon {
+
+      assert_eq!(contract.topup(AccountId::from([0x1; 32]), 50), Ok(()));
+
+      assert_eq!(contract.add_songboon(Songboon {
         id: 1,
         donate_req_number: "abc-123".to_string(),
         donate_req_topic: "ขอทุนการศึกษา".to_string(),
@@ -555,7 +600,7 @@ mod dsongboon {
           None,
           None,
         ],
-      }, AccountId::from([0x0; 32]), 10);
+      }, 10), Ok(()));
       let songboon = contract.get_songboon(1);
       assert!(songboon.certificates[0].is_none());
       assert!(songboon.certificates[1].is_none());
@@ -578,7 +623,10 @@ mod dsongboon {
     #[ink::test]
     fn update_songboon_status_works() {
       let mut contract = Dsongboon::default(100);
-      contract.add_songboon(Songboon {
+
+      assert_eq!(contract.topup(AccountId::from([0x1; 32]), 50), Ok(()));
+
+      assert_eq!(contract.add_songboon(Songboon {
         id: 1,
         donate_req_number: "abc-123".to_string(),
         donate_req_topic: "ขอทุนการศึกษา".to_string(),
@@ -607,10 +655,11 @@ mod dsongboon {
           None,
           None,
         ],
-      }, AccountId::from([0x0; 32]), 10);
+      }, 10), Ok(()));
       contract.update_songboon_status(1, "CLO".to_string());
       let songboon = contract.get_songboon(1);
       assert_eq!(songboon.donate_doc_status, "CLO".to_string());
+      assert_eq!(contract.get_balance(), 40);
     }
   }
 }
