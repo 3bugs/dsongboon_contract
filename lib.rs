@@ -106,6 +106,23 @@ mod dsongboon {
     pub tumboon_count_current_user: u32,
   }
 
+  #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
+  #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+  pub enum Error {
+    InsufficientBalance,
+  }
+
+  pub type Result<T> = core::result::Result<T, Error>;
+
+  #[ink(event)]
+  pub struct Transfer {
+    #[ink(topic)]
+    from: Option<AccountId>,
+    #[ink(topic)]
+    to: Option<AccountId>,
+    value: Balance,
+  }
+
   #[ink(storage)]
   #[derive(SpreadAllocate)]
   pub struct Dsongboon {
@@ -113,12 +130,73 @@ mod dsongboon {
     songboon_id_list: Vec<u32>,
     tumboon_map: Mapping<u32, Tumboon>,
     tumboon_id_list: Vec<u32>,
+    agt_balance: Balance,
+    balances: Mapping<AccountId, Balance>,
   }
 
   impl Dsongboon {
     #[ink(constructor)]
-    pub fn default() -> Self {
-      ink_lang::utils::initialize_contract(|_| {})
+    pub fn default(initial_balance: Balance) -> Self {
+      //ink_lang::utils::initialize_contract(|_| {})
+      ink_lang::utils::initialize_contract(|contract| {
+        Self::init(contract, initial_balance)
+      })
+    }
+
+    fn init(&mut self, initial_balance: Balance) {
+      //let caller = Self::env().caller();
+      //self.balances.insert(&caller, &initial_agt_balance);
+      self.agt_balance = initial_balance;
+      Self::env().emit_event(Transfer {
+        from: None,
+        to: None,
+        value: initial_balance,
+      });
+    }
+
+    // return balance for AGT
+    #[ink(message)]
+    pub fn balance_of_agt(&self) -> Balance {
+      self.agt_balance
+    }
+
+    // return balance for the specified account
+    #[ink(message)]
+    pub fn balance_of(&self, owner: AccountId) -> Balance {
+      self.balances.get(owner).unwrap_or_default()
+    }
+
+    #[inline]
+    fn balance_of_impl(&self, owner: &AccountId) -> Balance {
+      self.balances.get(owner).unwrap_or_default()
+    }
+
+    #[ink(message)]
+    pub fn transfer(&mut self, to: AccountId, value: Balance) -> Result<()> {
+      let from = self.env().caller();
+      self.transfer_from_to(&from, &to, value)
+    }
+
+    fn transfer_from_to(
+      &mut self,
+      from: &AccountId,
+      to: &AccountId,
+      value: Balance,
+    ) -> Result<()> {
+      let from_balance = self.balance_of_impl(from);
+      if from_balance < value {
+        return Err(Error::InsufficientBalance);
+      }
+
+      self.balances.insert(from, &(from_balance - value));
+      let to_balance = self.balance_of_impl(to);
+      self.balances.insert(to, &(to_balance + value));
+      self.env().emit_event(Transfer {
+        from: Some(*from),
+        to: Some(*to),
+        value,
+      });
+      Ok(())
     }
 
     //--------------------------------------------------------------------------
@@ -126,9 +204,32 @@ mod dsongboon {
     //--------------------------------------------------------------------------
 
     #[ink(message)]
-    pub fn add_songboon(&mut self, songboon: Songboon) {
+    pub fn add_songboon(
+      &mut self,
+      songboon: Songboon,
+      account: AccountId,
+      fee: Balance,
+    ) -> Result<()> {
+      let from = self.env().caller();
+      let from_balance = self.balance_of_impl(&from);
+      if from_balance < fee {
+        return Err(Error::InsufficientBalance);
+      }
+
+      self.balances.insert(from, &(from_balance - fee));
+      self.agt_balance += fee;
+      //let to_balance = self.balance_of_impl(to);
+      //self.balances.insert(to, &(to_balance + fee));
+      self.env().emit_event(Transfer {
+        from: Some(from),
+        to: None,
+        value: fee,
+      });
+
       self.songboon_map.insert(songboon.id, &songboon);
       self.songboon_id_list.push(songboon.id);
+
+      Ok(())
     }
 
     #[ink(message)]
@@ -209,9 +310,32 @@ mod dsongboon {
     //--------------------------------------------------------------------------
 
     #[ink(message)]
-    pub fn add_tumboon(&mut self, tumboon: Tumboon) {
+    pub fn add_tumboon(
+      &mut self,
+      tumboon: Tumboon,
+      account: AccountId,
+      fee: Balance,
+    ) -> Result<()> {
+      let from = self.env().caller();
+      let from_balance = self.balance_of_impl(&from);
+      if from_balance < fee {
+        return Err(Error::InsufficientBalance);
+      }
+
+      self.balances.insert(from, &(from_balance - fee));
+      self.agt_balance += fee;
+      //let to_balance = self.balance_of_impl(to);
+      //self.balances.insert(to, &(to_balance + fee));
+      self.env().emit_event(Transfer {
+        from: Some(from),
+        to: None,
+        value: fee,
+      });
+
       self.tumboon_map.insert(tumboon.id, &tumboon);
       self.tumboon_id_list.push(tumboon.id);
+
+      Ok(())
     }
 
     #[ink(message)]
@@ -332,7 +456,7 @@ mod dsongboon {
 
     #[ink::test]
     fn songboon_works() {
-      let mut contract = Dsongboon::default();
+      let mut contract = Dsongboon::default(100);
       //assert_eq!(contract.get_songboon_count(), 0);
       let songboon = Songboon {
         id: 1,
@@ -376,7 +500,7 @@ mod dsongboon {
         let mut sb = songboon.clone();
         sb.id = i;
         sb.total_req_amount = i * 1000;
-        contract.add_songboon(sb);
+        contract.add_songboon(sb, AccountId::from([0x0; 32]), 10);
         assert_eq!(contract.songboon_count(), i);
         assert_eq!(contract.get_songboon(i).id, i);
       }
@@ -401,7 +525,7 @@ mod dsongboon {
 
     #[ink::test]
     fn add_certificate_works() {
-      let mut contract = Dsongboon::default();
+      let mut contract = Dsongboon::default(100);
       contract.add_songboon(Songboon {
         id: 1,
         donate_req_number: "abc-123".to_string(),
@@ -431,7 +555,7 @@ mod dsongboon {
           None,
           None,
         ],
-      });
+      }, AccountId::from([0x0; 32]), 10);
       let songboon = contract.get_songboon(1);
       assert!(songboon.certificates[0].is_none());
       assert!(songboon.certificates[1].is_none());
@@ -453,7 +577,7 @@ mod dsongboon {
 
     #[ink::test]
     fn update_songboon_status_works() {
-      let mut contract = Dsongboon::default();
+      let mut contract = Dsongboon::default(100);
       contract.add_songboon(Songboon {
         id: 1,
         donate_req_number: "abc-123".to_string(),
@@ -483,7 +607,7 @@ mod dsongboon {
           None,
           None,
         ],
-      });
+      }, AccountId::from([0x0; 32]), 10);
       contract.update_songboon_status(1, "CLO".to_string());
       let songboon = contract.get_songboon(1);
       assert_eq!(songboon.donate_doc_status, "CLO".to_string());
